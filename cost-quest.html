@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COST QUEST: The Ledger of Doom</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            font-family: 'VT323', monospace;
+            color: #0f0;
+            overflow: hidden;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        .game-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #000;
+        }
+        
+        .title-screen {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(180deg, #000055 0%, #000000 100%);
+            animation: scanlines 8s linear infinite;
+        }
+        
+        @keyframes scanlines {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 100%; }
+        }
+        
+        .title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 48px;
+            color: #ffff55;
+            text-shadow: 4px 4px #aa5500, -2px -2px #ffffff;
+            margin-bottom: 20px;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 4px 4px #aa5500, -2px -2px #ffffff, 0 0 10px #ffff55; }
+            to { text-shadow: 4px 4px #aa5500, -2px -2px #ffffff, 0 0 30px #ffff55, 0 0 40px #ffaa00; }
+        }
+        
+        .subtitle {
+            font-size: 24px;
+            color: #55ffff;
+            margin-bottom: 40px;
+        }
+        
+        .start-button {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 20px;
+            padding: 20px 40px;
+            background: #aa00aa;
+            color: #ffff55;
+            border: 4px solid #ff55ff;
+            cursor: pointer;
+            animation: pulse 1s ease-in-out infinite;
+            transition: all 0.1s;
+        }
+        
+        .start-button:hover {
+            background: #ff55ff;
+            color: #000;
+            transform: scale(1.05);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 20px #ff55ff; }
+            50% { box-shadow: 0 0 40px #ff55ff, 0 0 60px #aa00aa; }
+        }
+        
+        .game-screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+        }
+        
+        .game-screen.active {
+            display: flex;
+        }
+        
+        .status-bar {
+            background: #0000aa;
+            color: #ffffff;
+            padding: 8px 16px;
+            font-size: 20px;
+            border-bottom: 4px solid #5555ff;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .main-area {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+        
+        .viewport {
+            flex: 1;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        
+        .scene-image {
+            height: 60%;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 4px solid #555555;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .scene-image canvas {
+            max-width: 100%;
+            max-height: 100%;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        .scene-description {
+            flex: 1;
+            background: #000000;
+            color: #ffffff;
+            padding: 20px;
+            font-size: 24px;
+            line-height: 1.4;
+            overflow-y: auto;
+            border-bottom: 4px solid #555555;
+        }
+        
+        .input-area {
+            background: #000000;
+            padding: 16px;
+            border-top: 4px solid #555555;
+        }
+        
+        .input-prompt {
+            color: #55ff55;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .command-input {
+            width: 100%;
+            background: #000055;
+            color: #ffffff;
+            border: 3px solid #5555ff;
+            padding: 12px;
+            font-family: 'VT323', monospace;
+            font-size: 24px;
+            outline: none;
+        }
+        
+        .command-input:focus {
+            border-color: #55ffff;
+            box-shadow: 0 0 20px #0055aa;
+        }
+        
+        .sidebar {
+            width: 300px;
+            background: #2a0a0a;
+            border-left: 4px solid #aa5555;
+            padding: 16px;
+            overflow-y: auto;
+        }
+        
+        .inventory-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            color: #ffff55;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        
+        .inventory-item {
+            background: #550000;
+            border: 2px solid #aa5555;
+            padding: 12px;
+            margin-bottom: 8px;
+            font-size: 20px;
+            color: #ffaa55;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        
+        .inventory-item:hover {
+            background: #aa0000;
+            border-color: #ff5555;
+            transform: translateX(4px);
+        }
+        
+        .score-display {
+            margin-top: 20px;
+            padding: 16px;
+            background: #0a0a2a;
+            border: 2px solid #5555aa;
+            text-align: center;
+        }
+        
+        .score-label {
+            font-size: 16px;
+            color: #5555ff;
+        }
+        
+        .score-value {
+            font-size: 32px;
+            color: #55ffff;
+            font-family: 'Press Start 2P', cursive;
+        }
+        
+        .hint-text {
+            color: #55ff55;
+            font-style: italic;
+            margin-top: 8px;
+        }
+        
+        .victory-screen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 1000;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .victory-screen.active {
+            display: flex;
+        }
+        
+        .victory-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 56px;
+            color: #ffff55;
+            text-shadow: 4px 4px #aa5500;
+            margin-bottom: 30px;
+            animation: victoryGlow 1s ease-in-out infinite alternate;
+        }
+        
+        @keyframes victoryGlow {
+            from { text-shadow: 4px 4px #aa5500, 0 0 20px #ffff55; }
+            to { text-shadow: 4px 4px #aa5500, 0 0 60px #ffff55, 0 0 80px #ffaa00; }
+        }
+        
+        .victory-message {
+            font-size: 28px;
+            color: #55ffff;
+            text-align: center;
+            max-width: 800px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .final-score {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 36px;
+            color: #ff55ff;
+            margin: 30px 0;
+        }
+        
+        .crt-effect {
+            pointer-events: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            z-index: 9999;
+        }
+        
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 250px;
+            }
+            .title {
+                font-size: 32px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .main-area {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                max-height: 200px;
+                border-left: none;
+                border-top: 4px solid #aa5555;
+            }
+            .title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="crt-effect"></div>
+    
+    <div class="game-container">
+        <!-- Title Screen -->
+        <div class="title-screen" id="titleScreen">
+            <div class="title">COST QUEST</div>
+            <div class="subtitle">The Ledger of Doom</div>
+            <button class="start-button" onclick="startGame()">PRESS START</button>
+            <div style="margin-top: 40px; font-size: 18px; color: #aaaaaa; text-align: center; max-width: 600px; padding: 0 20px;">
+                A Sierra-style text adventure<br>
+                Type commands like: LOOK, TAKE LEDGER, USE CALCULATOR, GO NORTH<br>
+                Or just type the object name to examine it
+            </div>
+        </div>
+        
+        <!-- Game Screen -->
+        <div class="game-screen" id="gameScreen">
+            <div class="status-bar">
+                <span id="locationName">Accounting Office</span>
+                <span id="timeDisplay">Time: 8:00 AM</span>
+            </div>
+            
+            <div class="main-area">
+                <div class="viewport">
+                    <div class="scene-image" id="sceneImage">
+                        <canvas id="gameCanvas"></canvas>
+                    </div>
+                    <div class="scene-description" id="sceneDescription">
+                        Welcome to COST QUEST! Type commands to interact with the world.
+                    </div>
+                    <div class="input-area">
+                        <div class="input-prompt">&gt; What do you want to do?</div>
+                        <input type="text" class="command-input" id="commandInput" autocomplete="off" />
+                    </div>
+                </div>
+                
+                <div class="sidebar">
+                    <div class="inventory-title">INVENTORY</div>
+                    <div id="inventoryList"></div>
+                    <div class="score-display">
+                        <div class="score-label">ACCOUNTING SCORE</div>
+                        <div class="score-value" id="scoreValue">0/100</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Victory Screen -->
+        <div class="victory-screen" id="victoryScreen">
+            <div class="victory-title">CONGRATULATIONS!</div>
+            <div class="victory-message" id="victoryMessage"></div>
+            <div class="final-score" id="finalScore"></div>
+        </div>
+    </div>
+
+    <script>
+        // Game State
+        const game = {
+            currentRoom: 'office',
+            inventory: [],
+            score: 0,
+            maxScore: 100,
+            flags: {
+                readManual: false,
+                calculatedOverhead: false,
+                analyzedVariance: false,
+                fixedLedger: false,
+                completedReport: false,
+                hasOverheadRate: false,
+                hasVarianceData: false,
+                unlockedVault: false
+            },
+            time: 480, // 8:00 AM in minutes
+            rooms: {},
+            parser: null
+        };
+
+        // Room Definitions
+        const rooms = {
+            office: {
+                name: "Accounting Office",
+                description: "You're in a cramped accounting office. Fluorescent lights flicker overhead. Your desk is cluttered with papers and a mysterious LEDGER sits in the center, glowing faintly. A POSTER on the wall shows cost accounting formulas. There's a door to the NORTH.",
+                exits: { north: 'hallway' },
+                items: ['ledger', 'poster', 'desk'],
+                visited: false
+            },
+            hallway: {
+                name: "Corporate Hallway",
+                description: "A sterile corporate hallway stretches before you. To the WEST is the BREAK ROOM. To the EAST is the PRODUCTION FLOOR. To the SOUTH is your office. A VAULT door looms to the NORTH, sealed with a numeric keypad.",
+                exits: { west: 'breakroom', east: 'production', south: 'office', north: 'vault' },
+                items: ['vault', 'keypad'],
+                visited: false
+            },
+            breakroom: {
+                name: "Break Room",
+                description: "A dingy break room with a flickering vending machine. A MANUAL titled 'Cost Accounting for Dummies' sits on a table. There's a CALCULATOR here. The EXIT is to the EAST.",
+                exits: { east: 'hallway' },
+                items: ['manual', 'calculator', 'table'],
+                visited: false
+            },
+            production: {
+                name: "Production Floor",
+                description: "The production floor buzzes with activity. MACHINES hum rhythmically. A SUPERVISOR stands near a CHART showing production costs. A COMPUTER terminal blinks with data. The EXIT is to the WEST.",
+                exits: { west: 'hallway' },
+                items: ['machines', 'chart', 'computer', 'supervisor'],
+                visited: false
+            },
+            vault: {
+                name: "Executive Vault",
+                description: "The vault! Golden light emanates from within. A PEDESTAL holds the sacred COST REPORT template. This is what you've been searching for! You can EXIT to the SOUTH.",
+                exits: { south: 'hallway' },
+                items: ['pedestal', 'report'],
+                visited: false,
+                locked: true
+            }
+        };
+
+        // Item Definitions
+        const items = {
+            ledger: {
+                name: "Mysterious Ledger",
+                description: "An ancient ledger filled with cryptic numbers. The entries seem wrong somehow. Direct labor: $50,000. Overhead applied: ???. You need to calculate the overhead!",
+                takeable: true,
+                used: false
+            },
+            poster: {
+                name: "Cost Accounting Poster",
+                description: "The poster shows: 'Overhead Rate = Total Overhead Costs / Total Direct Labor Hours'. Below it: 'Applied Overhead = Overhead Rate × Actual Direct Labor Hours'. Someone has scribbled: 'Total OH: $120,000, Total DL Hours: 10,000'",
+                takeable: false,
+                examined: false
+            },
+            manual: {
+                name: "Cost Accounting Manual",
+                description: "Chapter 3: Overhead Allocation. 'To apply overhead, first calculate the predetermined overhead rate using budgeted figures, then multiply by actual hours.' A bookmark points to a page about variance analysis: 'Favorable variance = Actual < Budgeted. Unfavorable variance = Actual > Budgeted.'",
+                takeable: true,
+                examined: false
+            },
+            calculator: {
+                name: "Calculator",
+                description: "A trusty HP-12C financial calculator. Perfect for cost calculations!",
+                takeable: true
+            },
+            chart: {
+                name: "Production Cost Chart",
+                description: "The chart shows: Actual Direct Labor Hours: 4,200. Budgeted Labor Hours: 4,000. Actual Overhead: $51,000. You notice the variance seems significant!",
+                takeable: false,
+                examined: false
+            },
+            computer: {
+                name: "Production Computer",
+                description: "The computer displays variance analysis software. It's asking for inputs to calculate labor efficiency variance.",
+                takeable: false,
+                used: false
+            },
+            vault: {
+                name: "Executive Vault",
+                description: "A massive vault door with a numeric keypad. You need a 4-digit code. Maybe it's related to overhead calculations?",
+                takeable: false
+            },
+            report: {
+                name: "Perfect Cost Report",
+                description: "The legendary Cost Report template! With this, you can complete your assignment and ace the course!",
+                takeable: true
+            },
+            supervisor: {
+                name: "Production Supervisor",
+                description: "A grizzled supervisor. She says: 'Overhead rate troubles again? Remember: divide total overhead by total direct labor hours. For us, that's $120,000 divided by 10,000 hours. What's that give you?'",
+                takeable: false
+            }
+        };
+
+        // Parser System
+        class Parser {
+            constructor() {
+                this.commands = {
+                    look: ['look', 'l', 'examine', 'x', 'describe'],
+                    take: ['take', 'get', 'grab', 'pick up', 'pickup'],
+                    use: ['use', 'apply', 'calculate', 'compute'],
+                    go: ['go', 'move', 'walk', 'travel', 'head'],
+                    inventory: ['inventory', 'i', 'inv', 'items'],
+                    help: ['help', 'h', '?'],
+                    talk: ['talk', 'speak', 'ask'],
+                    enter: ['enter', 'input', 'type'],
+                    read: ['read'],
+                    unlock: ['unlock', 'open']
+                };
+                
+                this.directions = ['north', 'south', 'east', 'west', 'n', 's', 'e', 'w'];
+            }
+
+            parse(input) {
+                input = input.toLowerCase().trim();
+                
+                if (!input) {
+                    return { action: 'empty' };
+                }
+
+                // Check for direction commands
+                for (let dir of this.directions) {
+                    if (input === dir || input === `go ${dir}`) {
+                        const fullDir = this.expandDirection(dir);
+                        return { action: 'go', direction: fullDir };
+                    }
+                }
+
+                // Check for single-word item examination
+                const currentRoom = rooms[game.currentRoom];
+                if (currentRoom.items.includes(input) || game.inventory.includes(input)) {
+                    return { action: 'look', target: input };
+                }
+
+                // Parse multi-word commands
+                const words = input.split(' ');
+                const verb = words[0];
+                const rest = words.slice(1).join(' ');
+
+                // Identify action
+                for (let [action, synonyms] of Object.entries(this.commands)) {
+                    if (synonyms.includes(verb) || input.startsWith(synonyms[0])) {
+                        return { action, target: rest || null };
+                    }
+                }
+
+                return { action: 'unknown', input };
+            }
+
+            expandDirection(dir) {
+                const map = { n: 'north', s: 'south', e: 'east', w: 'west' };
+                return map[dir] || dir;
+            }
+        }
+
+        // Drawing Functions (EGA-style graphics)
+        function drawScene(room) {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas size
+            canvas.width = 640;
+            canvas.height = 400;
+            
+            // EGA color palette
+            const colors = {
+                black: '#000000',
+                blue: '#0000AA',
+                green: '#00AA00',
+                cyan: '#00AAAA',
+                red: '#AA0000',
+                magenta: '#AA00AA',
+                brown: '#AA5500',
+                lightGray: '#AAAAAA',
+                darkGray: '#555555',
+                brightBlue: '#5555FF',
+                brightGreen: '#55FF55',
+                brightCyan: '#55FFFF',
+                brightRed: '#FF5555',
+                brightMagenta: '#FF55FF',
+                yellow: '#FFFF55',
+                white: '#FFFFFF'
+            };
+
+            ctx.imageSmoothingEnabled = false;
+            
+            // Draw based on room
+            switch(room) {
+                case 'office':
+                    drawOffice(ctx, colors);
+                    break;
+                case 'hallway':
+                    drawHallway(ctx, colors);
+                    break;
+                case 'breakroom':
+                    drawBreakroom(ctx, colors);
+                    break;
+                case 'production':
+                    drawProduction(ctx, colors);
+                    break;
+                case 'vault':
+                    drawVault(ctx, colors);
+                    break;
+            }
+        }
+
+        function drawOffice(ctx, c) {
+            // Background
+            ctx.fillStyle = c.blue;
+            ctx.fillRect(0, 0, 640, 400);
+            
+            // Floor
+            ctx.fillStyle = c.darkGray;
+            ctx.fillRect(0, 300, 640, 100);
+            
+            // Desk
+            ctx.fillStyle = c.brown;
+            ctx.fillRect(150, 250, 350, 80);
+            ctx.fillStyle = c.darkGray;
+            ctx.fillRect(160, 260, 330, 60);
+            
+            // Glowing Ledger
+            const glowIntensity = Math.sin(Date.now() / 500) * 0.3 + 0.7;
+            ctx.fillStyle = c.yellow;
+            ctx.globalAlpha = glowIntensity;
+            ctx.fillRect(280, 270, 80, 60);
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = c.brown;
+            ctx.fillRect(285, 275, 70, 50);
+            
+            // Poster on wall
+            ctx.fillStyle = c.white;
+            ctx.fillRect(50, 50, 120, 90);
+            ctx.fillStyle = c.black;
+            ctx.font = '12px monospace';
+            ctx.fillText('OVERHEAD', 60, 75);
+            ctx.fillText('RATE =', 60, 95);
+            ctx.fillText('OH / DLH', 60, 115);
+            
+            // Door
+            ctx.fillStyle = c.brown;
+            ctx.fillRect(500, 150, 100, 150);
+            ctx.fillStyle = c.yellow;
+            ctx.fillRect(570, 220, 15, 15);
+        }
+
+        function drawHallway(ctx, c) {
+            // Perspective hallway
+            ctx.fillStyle = c.darkGray;
+            ctx.fillRect(0, 0, 640, 400);
+            
+            // Floor tiles
+            ctx.fillStyle = c.lightGray;
+            for (let i = 0; i < 8; i++) {
+                for (let j = 0; j < 4; j++) {
+                    if ((i + j) % 2 === 0) {
+                        ctx.fillRect(i * 80, 280 + j * 30, 80, 30);
+                    }
+                }
+            }
+            
+            // Vault door (north)
+            ctx.fillStyle = c.darkGray;
+            ctx.fillRect(240, 50, 160, 180);
+            ctx.fillStyle = c.yellow;
+            ctx.fillRect(250, 60, 140, 160);
+            ctx.fillStyle = c.black;
+            ctx.fillRect(260, 70, 120, 140);
+            
+            // Keypad
+            ctx.fillStyle = c.brightGreen;
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    ctx.fillRect(280 + j * 25, 100 + i * 25, 20, 20);
+                }
+            }
+            
+            // Side doors
+            ctx.fillStyle = c.brown;
+            ctx.fillRect(50, 180, 60, 100);  // Left (west)
+            ctx.fillRect(530, 180, 60, 100); // Right (east)
+        }
+
+        function drawBreakroom(ctx, c) {
+            // Background
+            ctx.fillStyle = c.brown;
+            ctx.fillRect(0, 0, 640, 400);
+            
+            // Floor
+            ctx.fillStyle = c.darkGray;
+            ctx.fillRect(0, 300, 640, 100);
+            
+            // Table
+            ctx.fillStyle = c.brown;
+            ctx.fillRect(200, 220, 240, 100);
+            
+            // Manual on table
+            ctx.fillStyle = c.brightCyan;
+            ctx.fillRect(250, 200, 80, 60);
+            ctx.fillStyle = c.black;
+            ctx.font = '10px monospace';
+            ctx.fillText('COST', 265, 220);
+            ctx.fillText('ACCT', 265, 235);
+            
+            // Calculator
+            ctx.fillStyle = c.darkGray;
+            ctx.fillRect(350, 215, 50, 70);
+            ctx.fillStyle = c.brightGreen;
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 3; j++) {
+                    ctx.fillRect(355 + j * 13, 230 + i * 13, 10, 10);
+                }
+            }
+            
+            // Vending machine
+            ctx.fillStyle = c.red;
+            ctx.fillRect(480, 150, 120, 150);
+            ctx.fillStyle = c.darkGray;
+            ctx.fillRect(490, 160, 100, 80);
+        }
+
+        function drawProduction(ctx, c) {
+            // Background
+            ctx.fillStyle = c.darkGray;
+            ctx.fillRect(0, 0, 640, 400);
+            
+            // Floor
+            ctx.fillStyle = c.black;
+            ctx.fillRect(0, 320, 640, 80);
+            
+            // Machines
+            for (let i = 0; i < 3; i++) {
+                ctx.fillStyle = c.lightGray;
+                ctx.fillRect(50 + i * 180, 200, 120, 120);
+                ctx.fillStyle = c.brightCyan;
+                const blink = Math.floor(Date.now() / 300) % 2;
+                if (blink) {
+                    ctx.fillRect(80 + i * 180, 220, 20, 20);
+                }
+            }
+            
+            // Chart on wall
+            ctx.fillStyle = c.white;
+            ctx.fillRect(480, 80, 120, 100);
+            ctx.fillStyle = c.brightGreen;
+            ctx.fillRect(495, 140, 30, 30);
+            ctx.fillStyle = c.brightRed;
+            ctx.fillRect(540, 120, 30, 50);
+            
+            // Computer
+            ctx.fillStyle = c.darkGray;
+            ctx.fillRect(460, 240, 140, 80);
+            ctx.fillStyle = c.brightCyan;
+            ctx.fillRect(470, 250, 120, 60);
+            ctx.fillStyle = c.black;
+            ctx.font = '10px monospace';
+            ctx.fillText('VARIANCE', 480, 270);
+            ctx.fillText('ANALYSIS', 480, 285);
+            
+            // Supervisor
+            ctx.fillStyle = c.yellow;
+            ctx.fillRect(360, 180, 60, 140);
+            ctx.fillStyle = c.brown;
+            ctx.fillRect(365, 185, 50, 70);
+            ctx.fillStyle = c.yellow;
+            ctx.beginPath();
+            ctx.arc(390, 165, 20, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawVault(ctx, c) {
+            // Golden glow
+            const gradient = ctx.createRadialGradient(320, 200, 50, 320, 200, 300);
+            gradient.addColorStop(0, c.yellow);
+            gradient.addColorStop(1, c.brown);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 640, 400);
+            
+            // Pedestal
+            ctx.fillStyle = c.brown;
+            ctx.fillRect(270, 250, 100, 80);
+            ctx.fillRect(280, 240, 80, 10);
+            
+            // Glowing Report
+            const pulse = Math.sin(Date.now() / 300) * 0.4 + 0.6;
+            ctx.globalAlpha = pulse;
+            ctx.fillStyle = c.yellow;
+            ctx.fillRect(260, 180, 120, 60);
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = c.white;
+            ctx.fillRect(270, 190, 100, 40);
+            ctx.fillStyle = c.black;
+            ctx.font = '12px monospace';
+            ctx.fillText('COST', 290, 210);
+            ctx.fillText('REPORT', 285, 225);
+            
+            // Rays of light
+            ctx.strokeStyle = c.yellow;
+            ctx.lineWidth = 3;
+            for (let i = 0; i < 8; i++) {
+                const angle = (i / 8) * Math.PI * 2 + Date.now() / 1000;
+                const x1 = 320 + Math.cos(angle) * 50;
+                const y1 = 210 + Math.sin(angle) * 50;
+                const x2 = 320 + Math.cos(angle) * 150;
+                const y2 = 210 + Math.sin(angle) * 150;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+        }
+
+        // Game Logic Functions
+        function updateDisplay() {
+            const room = rooms[game.currentRoom];
+            document.getElementById('locationName').textContent = room.name;
+            
+            // Update time
+            const hours = Math.floor(game.time / 60);
+            const minutes = game.time % 60;
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const displayHours = hours > 12 ? hours - 12 : hours;
+            document.getElementById('timeDisplay').textContent = 
+                `Time: ${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+            
+            // Update score
+            document.getElementById('scoreValue').textContent = `${game.score}/${game.maxScore}`;
+            
+            // Update inventory
+            const invList = document.getElementById('inventoryList');
+            invList.innerHTML = '';
+            if (game.inventory.length === 0) {
+                invList.innerHTML = '<div style="color: #888; font-size: 18px; text-align: center;">Empty</div>';
+            } else {
+                game.inventory.forEach(itemId => {
+                    const div = document.createElement('div');
+                    div.className = 'inventory-item';
+                    div.textContent = items[itemId].name;
+                    div.onclick = () => examineItem(itemId);
+                    invList.appendChild(div);
+                });
+            }
+            
+            // Draw scene
+            drawScene(game.currentRoom);
+            
+            // Animate drawing
+            requestAnimationFrame(() => drawScene(game.currentRoom));
+        }
+
+        function printMessage(msg) {
+            const desc = document.getElementById('sceneDescription');
+            desc.innerHTML += '<br>' + msg;
+            desc.scrollTop = desc.scrollHeight;
+        }
+
+        function setDescription(msg) {
+            document.getElementById('sceneDescription').innerHTML = msg;
+        }
+
+        function examineRoom() {
+            const room = rooms[game.currentRoom];
+            let msg = room.description;
+            
+            if (!room.visited) {
+                room.visited = true;
+                game.time += 5;
+            }
+            
+            setDescription(msg);
+        }
+
+        function examineItem(itemId) {
+            const item = items[itemId];
+            if (!item) {
+                printMessage("You don't see that here.");
+                return;
+            }
+            
+            printMessage(item.description);
+            
+            // Check for special examination rewards
+            if (itemId === 'poster' && !item.examined) {
+                item.examined = true;
+                game.score += 10;
+                printMessage('<span class="hint-text">+10 points! You\'ve learned about overhead rates!</span>');
+            }
+            
+            if (itemId === 'manual' && !game.flags.readManual) {
+                game.flags.readManual = true;
+                game.score += 10;
+                printMessage('<span class="hint-text">+10 points! You understand overhead allocation now!</span>');
+            }
+            
+            if (itemId === 'chart' && !item.examined) {
+                item.examined = true;
+                game.score += 10;
+                printMessage('<span class="hint-text">+10 points! You\'ve noted the variance data!</span>');
+                game.flags.hasVarianceData = true;
+            }
+            
+            updateDisplay();
+        }
+
+        function takeItem(itemId) {
+            const room = rooms[game.currentRoom];
+            
+            if (!room.items.includes(itemId)) {
+                printMessage("You don't see that here.");
+                return;
+            }
+            
+            const item = items[itemId];
+            if (!item.takeable) {
+                printMessage("You can't take that.");
+                return;
+            }
+            
+            game.inventory.push(itemId);
+            room.items = room.items.filter(i => i !== itemId);
+            printMessage(`You take the ${item.name}.`);
+            game.score += 5;
+            game.time += 2;
+            updateDisplay();
+        }
+
+        function useItem(itemId) {
+            if (itemId.includes('calculator')) {
+                useCalculator();
+            } else if (itemId.includes('computer')) {
+                useComputer();
+            } else if (itemId.includes('ledger')) {
+                useLedger();
+            } else {
+                printMessage("You can't use that right now.");
+            }
+        }
+
+        function useCalculator() {
+            if (!game.inventory.includes('calculator')) {
+                printMessage("You don't have a calculator.");
+                return;
+            }
+            
+            if (!game.flags.readManual) {
+                printMessage("You should probably read the manual first to understand what to calculate.");
+                return;
+            }
+            
+            printMessage("You pull out the calculator. Based on the poster: Total Overhead = $120,000, Total DL Hours = 10,000.");
+            printMessage("Overhead Rate = $120,000 ÷ 10,000 = $12 per direct labor hour");
+            
+            if (!game.flags.calculatedOverhead) {
+                game.flags.calculatedOverhead = true;
+                game.flags.hasOverheadRate = true;
+                game.score += 20;
+                printMessage('<span class="hint-text">+20 points! You\'ve calculated the predetermined overhead rate! The vault code might be 1200 (rate × 100)...</span>');
+            }
+            
+            game.time += 5;
+            updateDisplay();
+        }
+
+        function useComputer() {
+            if (game.currentRoom !== 'production') {
+                printMessage("There's no computer here.");
+                return;
+            }
+            
+            if (!game.flags.hasVarianceData) {
+                printMessage("You should examine the chart first to understand the variance data.");
+                return;
+            }
+            
+            printMessage("You access the variance analysis software...");
+            printMessage("Labor Efficiency Variance = (Actual Hours - Budgeted Hours) × Standard Rate");
+            printMessage("= (4,200 - 4,000) × $12 = 200 × $12 = $2,400 Unfavorable");
+            printMessage("The variance is UNFAVORABLE because actual hours exceeded budgeted hours!");
+            
+            if (!game.flags.analyzedVariance) {
+                game.flags.analyzedVariance = true;
+                game.score += 20;
+                printMessage('<span class="hint-text">+20 points! You\'ve performed variance analysis!</span>');
+            }
+            
+            game.time += 10;
+            updateDisplay();
+        }
+
+        function useLedger() {
+            if (!game.inventory.includes('ledger')) {
+                printMessage("You don't have the ledger.");
+                return;
+            }
+            
+            if (!game.flags.hasOverheadRate) {
+                printMessage("You need to calculate the overhead rate first.");
+                return;
+            }
+            
+            printMessage("You carefully apply overhead to the ledger...");
+            printMessage("Direct Labor: $50,000 (given)");
+            printMessage("If DL = $50,000 and rate = $12/hour, then DL Hours = $50,000 ÷ $12 = 4,167 hours");
+            printMessage("Applied Overhead = 4,167 hours × $12 = $50,004");
+            printMessage("You fix the ledger entries! The books balance!");
+            
+            if (!game.flags.fixedLedger) {
+                game.flags.fixedLedger = true;
+                game.score += 20;
+                printMessage('<span class="hint-text">+20 points! The ledger is now correct!</span>');
+            }
+            
+            game.time += 10;
+            updateDisplay();
+        }
+
+        function goDirection(direction) {
+            const room = rooms[game.currentRoom];
+            
+            if (game.currentRoom === 'hallway' && direction === 'north') {
+                if (!rooms.vault.locked) {
+                    game.currentRoom = 'vault';
+                    game.time += 3;
+                    examineRoom();
+                    updateDisplay();
+                    return;
+                } else {
+                    printMessage("The vault is locked. You need a 4-digit code.");
+                    return;
+                }
+            }
+            
+            if (room.exits[direction]) {
+                game.currentRoom = room.exits[direction];
+                game.time += 3;
+                examineRoom();
+                updateDisplay();
+            } else {
+                printMessage("You can't go that way.");
+            }
+        }
+
+        function enterCode(code) {
+            if (game.currentRoom !== 'hallway') {
+                printMessage("There's no keypad here.");
+                return;
+            }
+            
+            const cleanCode = code.replace(/\D/g, '');
+            
+            if (cleanCode === '1200') {
+                printMessage("*BEEP* The vault door hisses open with a satisfying click!");
+                printMessage("The overhead rate ($12.00) × 100 = 1200. Perfect!");
+                rooms.vault.locked = false;
+                
+                if (!game.flags.unlockedVault) {
+                    game.flags.unlockedVault = true;
+                    game.score += 20;
+                    printMessage('<span class="hint-text">+20 points! You\'ve unlocked the vault!</span>');
+                }
+                
+                game.time += 5;
+                updateDisplay();
+            } else {
+                printMessage("*BZZT* Incorrect code. The keypad blinks red.");
+                game.time += 2;
+            }
+        }
+
+        function getCostReport() {
+            if (game.currentRoom !== 'vault') {
+                printMessage("There's no report here.");
+                return;
+            }
+            
+            if (!game.flags.fixedLedger || !game.flags.analyzedVariance) {
+                printMessage("You should complete your cost calculations first before taking the sacred report!");
+                return;
+            }
+            
+            game.inventory.push('report');
+            rooms.vault.items = rooms.vault.items.filter(i => i !== 'report');
+            printMessage("You reverently take the Perfect Cost Report template!");
+            printMessage("With your newfound knowledge of overhead rates, variance analysis, and cost allocation, you can now complete any cost accounting assignment!");
+            
+            game.flags.completedReport = true;
+            game.score += 10;
+            game.time += 5;
+            
+            // Calculate final score
+            if (game.score >= 90) {
+                setTimeout(showVictory, 1000);
+            } else {
+                printMessage('<span class="hint-text">You\'re close, but make sure you\'ve examined everything and completed all calculations!</span>');
+            }
+            
+            updateDisplay();
+        }
+
+        function showVictory() {
+            const victoryScreen = document.getElementById('victoryScreen');
+            const message = document.getElementById('victoryMessage');
+            const finalScore = document.getElementById('finalScore');
+            
+            const hours = Math.floor(game.time / 60);
+            const minutes = game.time % 60;
+            
+            message.innerHTML = `
+                You've mastered the fundamentals of cost accounting!<br><br>
+                🎓 Overhead Rate: Calculated<br>
+                📊 Variance Analysis: Complete<br>
+                📚 Ledger: Balanced<br>
+                🏆 Report Template: Acquired<br><br>
+                Time: ${hours - 8} hours ${minutes} minutes<br><br>
+                You're now ready to tackle any cost accounting problem!
+            `;
+            
+            finalScore.textContent = `FINAL SCORE: ${game.score}/${game.maxScore}`;
+            
+            victoryScreen.classList.add('active');
+        }
+
+        function processCommand(command) {
+            const parsed = game.parser.parse(command);
+            
+            printMessage(`<span style="color: #55ff55;">&gt; ${command}</span>`);
+            
+            switch(parsed.action) {
+                case 'empty':
+                    break;
+                    
+                case 'look':
+                    if (!parsed.target) {
+                        examineRoom();
+                    } else {
+                        const target = parsed.target.replace(/^(the|a|an) /, '');
+                        examineItem(target);
+                    }
+                    break;
+                    
+                case 'take':
+                    if (!parsed.target) {
+                        printMessage("Take what?");
+                    } else {
+                        const target = parsed.target.replace(/^(the|a|an) /, '');
+                        if (target.includes('report')) {
+                            getCostReport();
+                        } else {
+                            takeItem(target);
+                        }
+                    }
+                    break;
+                    
+                case 'use':
+                    if (!parsed.target) {
+                        printMessage("Use what?");
+                    } else {
+                        useItem(parsed.target);
+                    }
+                    break;
+                    
+                case 'go':
+                    goDirection(parsed.direction);
+                    break;
+                    
+                case 'inventory':
+                    if (game.inventory.length === 0) {
+                        printMessage("You're not carrying anything.");
+                    } else {
+                        printMessage("You're carrying: " + game.inventory.map(i => items[i].name).join(', '));
+                    }
+                    break;
+                    
+                case 'help':
+                    printMessage("Commands: LOOK [item], TAKE [item], USE [item], GO [direction], INVENTORY, TALK TO [person], ENTER [code]");
+                    printMessage("Example: EXAMINE POSTER, TAKE CALCULATOR, USE CALCULATOR, GO NORTH");
+                    break;
+                    
+                case 'talk':
+                    if (parsed.target && parsed.target.includes('supervisor')) {
+                        examineItem('supervisor');
+                    } else {
+                        printMessage("Nobody here wants to chat.");
+                    }
+                    break;
+                    
+                case 'enter':
+                    if (!parsed.target) {
+                        printMessage("Enter what code?");
+                    } else {
+                        enterCode(parsed.target);
+                    }
+                    break;
+                    
+                case 'read':
+                    if (parsed.target && parsed.target.includes('manual')) {
+                        examineItem('manual');
+                    } else {
+                        printMessage("Read what?");
+                    }
+                    break;
+                    
+                case 'unlock':
+                    if (game.currentRoom === 'hallway') {
+                        printMessage("You need to ENTER a 4-digit code on the keypad.");
+                    } else {
+                        printMessage("There's nothing to unlock here.");
+                    }
+                    break;
+                    
+                case 'unknown':
+                    printMessage("I don't understand that command. Type HELP for a list of commands.");
+                    break;
+            }
+            
+            updateDisplay();
+        }
+
+        function startGame() {
+            document.getElementById('titleScreen').style.display = 'none';
+            document.getElementById('gameScreen').classList.add('active');
+            
+            game.parser = new Parser();
+            game.currentRoom = 'office';
+            
+            examineRoom();
+            updateDisplay();
+            
+            document.getElementById('commandInput').focus();
+        }
+
+        // Input handling
+        document.addEventListener('DOMContentLoaded', () => {
+            const input = document.getElementById('commandInput');
+            
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const command = input.value.trim();
+                    if (command) {
+                        processCommand(command);
+                        input.value = '';
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
