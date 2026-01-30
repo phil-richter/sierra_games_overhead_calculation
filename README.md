@@ -19,4 +19,5 @@ Understand favorable vs. unfavorable variances
 Balance accounting ledgers
 
 How to Play:
+
 Type commands like LOOK, TAKE CALCULATOR, GO NORTH, USE COMPUTER, or ENTER 1200. Explore the office, solve cost accounting puzzles, and unlock the executive vault to retrieve the legendary Cost Report!
